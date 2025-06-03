@@ -7,7 +7,7 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Mess
 
 # Токен бота
 TOKEN = os.environ.get('BOT_TOKEN', "7179080851:AAGu_seX2xH6Q9WeY7tu6qT0i4BR6K1yje4")
-WEBHOOK_URL = os.environ.get('WEBHOOK_URL', 'https://your-app-name.onrender.com')
+WEBHOOK_URL = os.environ.get('WEBHOOK_URL', 'https://fiz-wycy.onrender.com')
 
 # Flask приложение
 app = Flask(__name__)

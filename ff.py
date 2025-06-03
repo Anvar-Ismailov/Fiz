@@ -1,34 +1,25 @@
+import os
 import requests
-from telegram.ext import Dispatcher, CommandHandler, CallbackQueryHandler
+import logging
+from flask import Flask, request, jsonify
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update
-from flask import Flask, logging, request
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ConversationHandler, ContextTypes
 
-TOKEN = "7179080851:AAGu_seX2xH6Q9WeY7tu6qT0i4BR6K1yje4"
-bot = Bot(token=TOKEN)
+# Токен бота
+TOKEN = os.environ.get('BOT_TOKEN', "7179080851:AAGu_seX2xH6Q9WeY7tu6qT0i4BR6K1yje4")
+WEBHOOK_URL = os.environ.get('WEBHOOK_URL', 'https://your-app-name.onrender.com')
+
+# Flask приложение
 app = Flask(__name__)
 
-dispatcher = Dispatcher(bot, None, workers=0)
+# Настройка логирования
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
-def start(update, context):
-    update.message.reply_text("Бот работает!")
-
-dispatcher.add_handler(CommandHandler("start", start))
-
-@app.route(f"/{TOKEN}", methods=["POST"])
-def webhook():
-    update = Update.de_json(request.get_json(force=True), bot)
-    dispatcher.process_update(update)
-    return "ok"
-
-@app.route('/')
-def index():
-    return "бот работает"
-
-if __name__ == "__main__":
-    app.run(port=5000)
-
-
-
+# Данные бота
 TERMS = {
     "инерция": "Инерция — дененің өз қозғалыс күйін сақтау қасиеті. Егер денеге сырттан күш әсер етпесе, дене өзінің бастапқы тыныштық күйін немесе түзу сызықты бірқалыпты қозғалысын сақтайды...",
     "жылдамдық": "Жылдамдық — қозғалыстағы дененің орын ауыстыруының уақытқа қатынасы. Бұл — векторлық шама...",
@@ -154,11 +145,6 @@ QUIZZES = [
         "answer": 1
     },
     {
-        "question": "Ньютонның бірінші заңы қалай аталады?",
-        "options": ["Инерция заңы", "Әрекет және қарсы әрекет заңы", "Динамика заңы"],
-        "answer": 0
-    },
-    {
         "question": "Ньютонның екінші заңы нені сипаттайды?",
         "options": ["Дене тыныштықта болады", "Күш пен үдеу арасындағы байланысты", "Әрекетке қарсы әрекет"],
         "answer": 1
@@ -179,7 +165,7 @@ QUIZZES = [
         "answer": 1
     },
     {
-        "question": "Денеге әрекет ететін күштер теңгерілген болса, дене не істейді?",
+        "question": "Денеге әрекет ететін күштер теңгерілген болса, дене неістейді?",
         "options": ["Қозғалысын өзгертеді", "Үдей қозғалады", "Жылдамдығын өзгертпей қозғалады немесе тыныштықта болады"],
         "answer": 2
     },
@@ -223,13 +209,12 @@ RESOURCES = {
     ]
 }
 
-
+# Глобальные переменные
 USER_DATA = {}
+FEEDBACK = 1
 
-FEEDBACK, = range(1)
-
-
-# --- КЛАВИАТУРЫ ---
+# Создание приложения Telegram
+application = None
 
 def main_keyboard():
     keyboard = [
@@ -252,8 +237,6 @@ def main_keyboard():
 def back_keyboard():
     return InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Артқа", callback_data='back')]])
 
-
-
 async def show_main_menu(update, context):
     if update.callback_query:
         await update.callback_query.edit_message_text(
@@ -266,11 +249,10 @@ async def show_main_menu(update, context):
             reply_markup=main_keyboard()
         )
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await show_main_menu(update, context)
 
-# Квиз
-async def quiz_handler(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore
+async def quiz_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     index = USER_DATA.get(user_id, {}).get("quiz_index", 0)
     if index >= len(QUIZZES):
@@ -290,7 +272,7 @@ async def quiz_handler(update: Update, context: ContextTypes.DEFAULT_TYPE): # ty
         reply_markup=InlineKeyboardMarkup(keyboard + [[InlineKeyboardButton("🔙 Артқа", callback_data='back')]])
     )
 
-async def handle_quiz_answer(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore # type: ignore
+async def handle_quiz_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = update.effective_user.id
     index = USER_DATA.get(user_id, {}).get("quiz_index", 0)
@@ -307,17 +289,14 @@ async def handle_quiz_answer(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await query.edit_message_text(result, reply_markup=back_keyboard())
     await quiz_handler(update, context)
 
-# Ресурсы
-async def resources_handler(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore
+async def resources_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = "<b>Пайдалы ресурстар:</b>\n\n"
     for section, lst in RESOURCES.items():
         text += f"<b>{section}:</b>\n"
         text += "\n".join(lst) + "\n\n"
     await update.callback_query.edit_message_text(text, parse_mode="HTML", reply_markup=back_keyboard())
 
-
-# Профиль/прогресс
-async def profile_handler(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore
+async def profile_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     quiz_score = USER_DATA.get(user_id, {}).get("quiz_score", 0)
     quiz_index = USER_DATA.get(user_id, {}).get("quiz_index", 0)
@@ -332,22 +311,20 @@ async def profile_handler(update: Update, context: ContextTypes.DEFAULT_TYPE): #
     )
     await update.callback_query.edit_message_text(text, parse_mode="HTML", reply_markup=back_keyboard())
 
-# Обратная связь
-async def feedback_start(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore # type: ignore
+async def feedback_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.callback_query.edit_message_text(
         "✉️ Өз ұсынысыңызды, сұрағыңызды немесе шағымыңызды жазыңыз. Сообщение будет передано разработчику.",
         reply_markup=back_keyboard()
     )
     return FEEDBACK
 
-async def feedback_receive(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore
+async def feedback_receive(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    logging.info(f"Feedback from {user.username} ({user.id}): {update.message.text}")
+    logger.info(f"Feedback from {user.username} ({user.id}): {update.message.text}")
     await update.message.reply_text("✅ Спасибо! Ваше сообщение отправлено разработчику.", reply_markup=back_keyboard())
-    return ConversationHandler.END # type: ignore
+    return ConversationHandler.END
 
-# Wikipedia
-async def external_handler(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore
+async def external_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.callback_query.edit_message_text(
         "🌐 Поиск по Wikipedia. Введите ваш физический вопрос или термин:"
         "\n\nПример: масса электрона, закон Архимеда, энергия фотона и т.п.",
@@ -355,14 +332,7 @@ async def external_handler(update: Update, context: ContextTypes.DEFAULT_TYPE): 
     )
     context.user_data["external"] = True
 
-
-async def visual_show(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore
-    query = update.callback_query
-    name = query.data.replace("visual_", "")
-    await query.answer()
-
-# Кнопки
-async def button(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore
+async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     if query.data == 'terms':
@@ -386,15 +356,12 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ig
         text = "Көмек бөлімдері:\n" + "\n".join([f"- {t}" for t in HELP])
         await query.edit_message_text(text, reply_markup=back_keyboard())
     elif query.data == 'categories':
-        text = "Категориялар тізімі:\n" + "\n".join([f"- {t}" for t in CATEGORIES])
+        text = "Категориялар:\n" + "\n".join([f"- {name}: {desc}" for name, desc in CATEGORIES.items()])
         await query.edit_message_text(text, reply_markup=back_keyboard())
-    elif query.data == 'ask':
-        await query.edit_message_text("Сұрағыңызды жазыңыз. Мысалы: инерция деген не?", reply_markup=back_keyboard())
-    elif query.data == 'back':
-        await show_main_menu(update, context)
     elif query.data == 'quiz':
         user_id = update.effective_user.id
-        USER_DATA[user_id] = {"quiz_index": 0, "quiz_score": 0}
+        USER_DATA.setdefault(user_id, {})["quiz_index"] = 0
+        USER_DATA[user_id]["quiz_score"] = 0
         await quiz_handler(update, context)
     elif query.data.startswith('quiz_answer_'):
         await handle_quiz_answer(update, context)
@@ -403,89 +370,210 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ig
     elif query.data == 'profile':
         await profile_handler(update, context)
     elif query.data == 'feedback':
-        return await feedback_start(update, context)
+        await feedback_start(update, context)
     elif query.data == 'external':
         await external_handler(update, context)
-    elif query.data.startswith('visual_'):
-        await visual_show(update, context)
+    elif query.data == 'ask':
+        await query.edit_message_text(
+            "❓ Сұрағыңызды жазыңыз. Мен физика бойынша көмектесуге дайынмын!",
+            reply_markup=back_keyboard()
+        )
+        context.user_data["ask_mode"] = True
+    elif query.data == 'back':
+        await show_main_menu(update, context)
 
-# Сообщения
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore
-    text = update.message.text.strip().lower()
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-
-    # Wikipedia API
+    text = update.message.text.lower()
+    
+    # Сохраняем историю запросов
+    USER_DATA.setdefault(user_id, {}).setdefault("history", []).append(text)
+    
+    # Обработка внешнего поиска
     if context.user_data.get("external"):
         context.user_data["external"] = False
-        url = f"https://ru.wikipedia.org/api/rest_v1/page/summary/{text.replace(' ', '_')}"
-        r = requests.get(url)
-        if r.ok and 'extract' in r.json():
-            summary = r.json()['extract']
-            reply = f"🌐 <b>Wikipedia:</b>\n{summary}"
-        else:
-            reply = "Извините, по вашему запросу Wikipedia не дала результата. Попробуйте другой термин."
-        await update.message.reply_text(reply, parse_mode="HTML", reply_markup=back_keyboard())
+        try:
+            # Простой поиск в Wikipedia API
+            wiki_url = f"https://ru.wikipedia.org/api/rest_v1/page/summary/{text.replace(' ', '%20')}"
+            response = requests.get(wiki_url, timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                summary = data.get('extract', 'Информация не найдена')
+                await update.message.reply_text(
+                    f"🌐 <b>Wikipedia результат:</b>\n\n{summary[:800]}...\n\n"
+                    f"<a href=\"{data.get('content_urls', {}).get('desktop', {}).get('page', '')}\">Толық мақала</a>",
+                    parse_mode="HTML",
+                    reply_markup=back_keyboard()
+                )
+            else:
+                await update.message.reply_text(
+                    "❌ Wikipedia-дан мәлімет табылмады. Басқа термин көрсетіңіз.",
+                    reply_markup=back_keyboard()
+                )
+        except Exception as e:
+            logger.error(f"Wikipedia search error: {e}")
+            await update.message.reply_text(
+                "❌ Іздеу кезінде қате орын алды.",
+                reply_markup=back_keyboard()
+            )
         return
-
-    reply = None
-    if text in TERMS:
-        reply = f"📚 <b>{text.title()}</b>:\n{TERMS[text]}"
-    elif text in THEORIES:
-        reply = f"🔬 <b>{text.title()}</b>:\n{THEORIES[text]}"
-    elif text in FORMULAS:
-        reply = f"📐 <b>{text.title()}</b>:\n{FORMULAS[text]}"
-    elif text in EXPERIMENTS:
-        reply = f"🧪 <b>{text.title()}</b>:\n{EXPERIMENTS[text]}"
-    elif text in VIDEOS:
-        reply = f"🎬 <b>{text.title()}</b>:\n<a href=\"{VIDEOS[text]}\">{VIDEOS[text]}</a>"
-    elif text in HELP:
-        reply = f"🆘 <b>{text.title()}</b>:\n{HELP[text]}"
-    elif text in CATEGORIES:
-        reply = f"🗂 <b>{text.title()}</b>:\n{CATEGORIES[text]}"
+    
+    # Поиск по базе знаний
+    found_results = []
+    
+    # Поиск в терминах
+    for term, definition in TERMS.items():
+        if term in text or any(word in term.lower() for word in text.split()):
+            found_results.append(f"📚 <b>{term.title()}:</b>\n{definition}")
+    
+    # Поиск в формулах
+    for formula_name, formula in FORMULAS.items():
+        if formula_name in text or any(word in formula_name.lower() for word in text.split()):
+            found_results.append(f"📐 <b>{formula_name.title()}:</b>\n{formula}")
+    
+    # Поиск в теориях
+    for theory, description in THEORIES.items():
+        if theory in text or any(word in theory.lower() for word in text.split()):
+            found_results.append(f"🔬 <b>{theory.title()}:</b>\n{description}")
+    
+    # Поиск в экспериментах
+    for experiment, description in EXPERIMENTS.items():
+        if experiment in text or any(word in experiment.lower() for word in text.split()):
+            found_results.append(f"🧪 <b>{experiment.title()}:</b>\n{description}")
+    
+    if found_results:
+        # Показываем первые 3 результата
+        response_text = "🔍 <b>Табылған нәтижелер:</b>\n\n" + "\n\n".join(found_results[:3])
+        if len(found_results) > 3:
+            response_text += f"\n\n<i>Тағы {len(found_results) - 3} нәтиже табылды...</i>"
+        
+        # Добавляем закладку
+        bookmark_keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("⭐ Сақтау", callback_data=f'bookmark_{text}')],
+            [InlineKeyboardButton("🔙 Артқа", callback_data='back')]
+        ])
+        
+        await update.message.reply_text(
+            response_text, 
+            parse_mode="HTML", 
+            reply_markup=bookmark_keyboard
+        )
     else:
-        found = False
-        for dct, emoji in [
-            (TERMS, "📚"), (THEORIES, "🔬"), (FORMULAS, "📐"),
-            (EXPERIMENTS, "🧪"), (VIDEOS, "🎬"), (HELP, "🆘"), (CATEGORIES, "🗂")
-        ]:
-            for key in dct:
-                if text in key or key in text:
-                    if dct is VIDEOS:
-                        reply = f"{emoji} <b>{key.title()}</b>:\n<a href=\"{dct[key]}\">{dct[key]}</a>"
-                    else:
-                        reply = f"{emoji} <b>{key.title()}</b>:\n{dct[key]}"
-                    found = True
-                    break
-            if found:
-                break
-        if not reply:
-            reply = "Кешіріңіз, бұл сұраныс бойынша ақпарат табылмады. Басқа сұрақ қойып көріңіз немесе мәзірді қолданыңыз."
+        # Предлагаем похожие запросы
+        suggestions = []
+        all_terms = list(TERMS.keys()) + list(FORMULAS.keys()) + list(THEORIES.keys())
+        
+        for term in all_terms[:5]:  # Показываем первые 5 похожих
+            if any(word in term.lower() for word in text.split()) or any(word in text for word in term.split()):
+                suggestions.append(term)
+        
+        if suggestions:
+            suggestion_text = "❓ Мүмкін, сіз мынаны іздеп жүрсіз:\n\n" + "\n".join([f"• {s}" for s in suggestions])
+        else:
+            suggestion_text = "❌ Өкінішке орай, сұрағыңыз бойынша ештеңе табылмады.\n\nБасқа терминдерді қолданып көріңіз немесе мәзірден таңдаңыз."
+        
+        await update.message.reply_text(
+            suggestion_text,
+            reply_markup=back_keyboard()
+        )
 
-    # Сохраняем историю пользователя
-    USER_DATA.setdefault(user_id, {}).setdefault("history", []).append(text)
-    if len(USER_DATA[user_id]["history"]) > 20:
-        USER_DATA[user_id]["history"] = USER_DATA[user_id]["history"][-20:]
+async def handle_bookmark(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    user_id = update.effective_user.id
+    bookmark_text = query.data.replace('bookmark_', '')
+    
+    USER_DATA.setdefault(user_id, {}).setdefault("bookmarks", []).append(bookmark_text)
+    await query.answer("⭐ Сақталды!")
 
-    await update.message.reply_text(reply, parse_mode="HTML", reply_markup=back_keyboard(), disable_web_page_preview=False)
+# Webhook обработчик
+@app.route('/webhook', methods=['POST'])
+async def webhook():
+    try:
+        json_data = request.get_json()
+        if json_data:
+            update = Update.de_json(json_data, application.bot)
+            await application.process_update(update)
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
-def main():
-    logging.basicConfig(
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
-    )
-    app = ApplicationBuilder().token(TOKEN).build() # type: ignore
-    app.add_handler(CommandHandler("start", start))
-    feedback_conv = ConversationHandler( # type: ignore
-        entry_points=[CallbackQueryHandler(feedback_start, pattern='^feedback$')], # type: ignore
+# Установка webhook
+@app.route('/set_webhook', methods=['GET'])
+async def set_webhook():
+    try:
+        webhook_url = f"{WEBHOOK_URL}/webhook"
+        await application.bot.set_webhook(webhook_url)
+        return f"Webhook установлен: {webhook_url}"
+    except Exception as e:
+        return f"Ошибка установки webhook: {e}", 500
+
+# Главная страница
+@app.route('/')
+def index():
+    return "FIzBot работает! 🤖"
+
+# Создание и настройка приложения
+async def create_application():
+    global application
+    application = Application.builder().token(TOKEN).build()
+    
+    # Обработчик обратной связи
+    feedback_handler = ConversationHandler()
+    entry_points=[CallbackQueryHandlerfeedback_start, pattern='^feedback'^{}
+                                           
+# Запуск приложения
+if __name__ == '__main__':
+    import asyncio
+    import sys
+    
+    async def main():
+        await create_application()
+        
+        # Если запускаем локально
+        if len(sys.argv) > 1 and sys.argv[1] == 'local':
+            print("Запуск в режиме polling...")
+            await application.run_polling()
+        else:
+            # Для продакшена (Render, Heroku и т.д.)
+            port = int(os.environ.get('PORT', 5000))
+            print(f"Запуск Flask сервера на порту {port}")
+            app.run(host='0.0.0.0', port=port, debug=False)
+    
+    # Для синхронного запуска Flask в продакшене
+    if len(sys.argv) <= 1 or sys.argv[1] != 'local':
+        asyncio.run(create_application())
+        port = int(os.environ.get('PORT', 5000))
+        app.run(host='0.0.0.0', port=port, debug=False)
+    else:
+        asyncio.run(main()))],
         states={
-            FEEDBACK: [MessageHandler(filters.TEXT & ~filters.COMMAND, feedback_receive)] # type: ignore
+            FEEDBACK: [MessageHandler(filters.TEXT & ~filters.COMMAND, feedback_receive)]
         },
-        fallbacks=[CallbackQueryHandler(show_main_menu, pattern='^back$')] # type: ignore
+        fallbacks=[CommandHandler('cancel', show_main_menu)]
     )
-    app.add_handler(feedback_conv)
-    app.add_handler(CallbackQueryHandler(button)) # type: ignore
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)) # type: ignore
-    print("Бот іске қосылды!")
-    app.run_polling()
+    
+    # Добавляем обработчики
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CallbackQueryHandler(button))
+    application.add_handler(CallbackQueryHandler(handle_bookmark, pattern='^bookmark_'))
+    application.add_handler(feedback_handler)
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    
+    # Инициализация приложения
+    await application.initialize()
+    return application
 
-if __name__ == "__main__":
-    main()
+# Запуск приложения
+if __name__ == '__main__':
+    create_application()
+    
+    # Если запускаем локально
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == 'local':
+        print("Запуск в режиме polling...")
+        application.run_polling()
+    else:
+        # Для продакшена (Render, Heroku и т.д.)
+        port = int(os.environ.get('PORT', 5000))
+        app.run(host='0.0.0.0', port=port, debug=False)

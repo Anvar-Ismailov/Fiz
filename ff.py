@@ -7,7 +7,7 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Mess
 
 # Токен бота
 TOKEN = os.environ.get('BOT_TOKEN', "7179080851:AAGu_seX2xH6Q9WeY7tu6qT0i4BR6K1yje4")
-WEBHOOK_URL = os.environ.get('WEBHOOK_URL', 'https://fiz-wycy.onrender.com')
+WEBHOOK_URL = os.environ.get('WEBHOOK_URL', 'https://your-app-name.onrender.com')
 
 # Flask приложение
 app = Flask(__name__)
@@ -519,8 +519,13 @@ async def create_application():
     application = Application.builder().token(TOKEN).build()
     
     # Обработчик обратной связи
-    feedback_handler = ConversationHandler()
-    entry_points=[CallbackQueryHandlerfeedback_start, pattern='^feedback'^{}
+    feedback_handler = ConversationHandler(
+        entry_points=[CallbackQueryHandler(feedback_start, pattern='^feedback')],
+        states={
+            FEEDBACK: [MessageHandler(filters.TEXT & ~filters.COMMAND, feedback_receive)]
+        },
+        fallbacks=[CommandHandler('cancel', show_main_menu)]
+    )
                                            
 # Запуск приложения
 if __name__ == '__main__':
@@ -530,15 +535,24 @@ if __name__ == '__main__':
     async def main():
         await create_application()
         
-        # Если запускаем локально
+if __name__ == '__main__':
+    import asyncio
+    import sys
+    
+    async def main():
+        await create_application()
+        
         if len(sys.argv) > 1 and sys.argv[1] == 'local':
             print("Запуск в режиме polling...")
             await application.run_polling()
-        else:
-            # Для продакшена (Render, Heroku и т.д.)
-            port = int(os.environ.get('PORT', 5000))
-            print(f"Запуск Flask сервера на порту {port}")
-            app.run(host='0.0.0.0', port=port, debug=False)
+    
+    # Для продакшена
+    if len(sys.argv) <= 1 or sys.argv[1] != 'local':
+        asyncio.run(create_application())
+        port = int(os.environ.get('PORT', 5000))
+        app.run(host='0.0.0.0', port=port, debug=False)
+    else:
+        asyncio.run(main())
     
     # Для синхронного запуска Flask в продакшене
     if len(sys.argv) <= 1 or sys.argv[1] != 'local':
@@ -546,12 +560,12 @@ if __name__ == '__main__':
         port = int(os.environ.get('PORT', 5000))
         app.run(host='0.0.0.0', port=port, debug=False)
     else:
-        asyncio.run(main()))],
+        asyncio.run(main())
         states={
             FEEDBACK: [MessageHandler(filters.TEXT & ~filters.COMMAND, feedback_receive)]
         },
         fallbacks=[CommandHandler('cancel', show_main_menu)]
-    )
+    
     
     # Добавляем обработчики
     application.add_handler(CommandHandler("start", start))
@@ -561,19 +575,26 @@ if __name__ == '__main__':
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
     # Инициализация приложения
-    await application.initialize()
-    return application
-
+asyncio.run(application.initialize())
+def some_function():
+    # код функции
+    return application  # здесь return разрешен
 # Запуск приложения
 if __name__ == '__main__':
-    create_application()
-    
-    # Если запускаем локально
+    import asyncio
     import sys
-    if len(sys.argv) > 1 and sys.argv[1] == 'local':
-        print("Запуск в режиме polling...")
-        application.run_polling()
-    else:
-        # Для продакшена (Render, Heroku и т.д.)
+    
+    async def main():
+        await create_application()
+        
+        if len(sys.argv) > 1 and sys.argv[1] == 'local':
+            print("Запуск в режиме polling...")
+            await application.run_polling()
+    
+    # Для синхронного запуска Flask в продакшене
+    if len(sys.argv) <= 1 or sys.argv[1] != 'local':
+        asyncio.run(create_application())
         port = int(os.environ.get('PORT', 5000))
         app.run(host='0.0.0.0', port=port, debug=False)
+    else:
+        asyncio.run(main())

@@ -1,17 +1,18 @@
-import logging
-
 import requests
-from flask import Flask, request
+from telegram.ext import Dispatcher, CommandHandler, CallbackQueryHandler
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import Dispatcher, CommandHandler
+from flask import Flask, logging, request
 
 TOKEN = "7179080851:AAGu_seX2xH6Q9WeY7tu6qT0i4BR6K1yje4"
 bot = Bot(token=TOKEN)
 app = Flask(__name__)
 
-@app.route('/')
-def index():
-    return "бот работает"
+dispatcher = Dispatcher(bot, None, workers=0)
+
+def start(update, context):
+    update.message.reply_text("Бот работает!")
+
+dispatcher.add_handler(CommandHandler("start", start))
 
 @app.route(f"/{TOKEN}", methods=["POST"])
 def webhook():
@@ -19,14 +20,12 @@ def webhook():
     dispatcher.process_update(update)
     return "ok"
 
-def start(update, context):
-    update.message.reply_text("Бот работает!")
+@app.route('/')
+def index():
+    return "бот работает"
 
-dispatcher = Dispatcher(bot, None, use_context=True)
-dispatcher.add_handler(CommandHandler("start", start))
-
-if __name__ == "_main_":
-    app.run()
+if __name__ == "__main__":
+    app.run(port=5000)
 
 
 

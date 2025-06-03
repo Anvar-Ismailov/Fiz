@@ -1,14 +1,32 @@
 import logging
-from telegram import (
-    Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaAnimation
-)
-from telegram.ext import (
-    ApplicationBuilder, CommandHandler, CallbackQueryHandler,
-    MessageHandler, ContextTypes, filters, ConversationHandler
-)
-import requests
 
-TOKEN = "7179080851:AAGu_seX2xH6Q9WeY7tu6qT0i4BR6K1yje4" 
+import requests
+from flask import Flask, request
+from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import Dispatcher, CommandHandler
+
+TOKEN = "7179080851:AAGu_seX2xH6Q9WeY7tu6qT0i4BR6K1yje4"
+bot = Bot(token=TOKEN)
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return "бот работает"
+
+@app.route(f"/{TOKEN}", methods=["POST"])
+def webhook():
+    update = Update.de_json(request.get_json(force=True), bot)
+    dispatcher.process_update(update)
+    return "ok"
+
+def start(update, context):
+    update.message.reply_text("Бот работает!")
+
+dispatcher = Dispatcher(bot, None, use_context=True)
+dispatcher.add_handler(CommandHandler("start", start))
+
+if __name__ == "_main_":
+    app.run()
 
 
 
@@ -236,7 +254,6 @@ def back_keyboard():
     return InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Артқа", callback_data='back')]])
 
 
-# --- ОБРАБОТЧИКИ ---
 
 async def show_main_menu(update, context):
     if update.callback_query:
@@ -250,11 +267,11 @@ async def show_main_menu(update, context):
             reply_markup=main_keyboard()
         )
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore
     await show_main_menu(update, context)
 
 # Квиз
-async def quiz_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def quiz_handler(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore
     user_id = update.effective_user.id
     index = USER_DATA.get(user_id, {}).get("quiz_index", 0)
     if index >= len(QUIZZES):
@@ -274,7 +291,7 @@ async def quiz_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=InlineKeyboardMarkup(keyboard + [[InlineKeyboardButton("🔙 Артқа", callback_data='back')]])
     )
 
-async def handle_quiz_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_quiz_answer(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore # type: ignore
     query = update.callback_query
     user_id = update.effective_user.id
     index = USER_DATA.get(user_id, {}).get("quiz_index", 0)
@@ -292,7 +309,7 @@ async def handle_quiz_answer(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await quiz_handler(update, context)
 
 # Ресурсы
-async def resources_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def resources_handler(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore
     text = "<b>Пайдалы ресурстар:</b>\n\n"
     for section, lst in RESOURCES.items():
         text += f"<b>{section}:</b>\n"
@@ -301,7 +318,7 @@ async def resources_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # Профиль/прогресс
-async def profile_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def profile_handler(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore
     user_id = update.effective_user.id
     quiz_score = USER_DATA.get(user_id, {}).get("quiz_score", 0)
     quiz_index = USER_DATA.get(user_id, {}).get("quiz_index", 0)
@@ -317,21 +334,21 @@ async def profile_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.callback_query.edit_message_text(text, parse_mode="HTML", reply_markup=back_keyboard())
 
 # Обратная связь
-async def feedback_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def feedback_start(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore # type: ignore
     await update.callback_query.edit_message_text(
         "✉️ Өз ұсынысыңызды, сұрағыңызды немесе шағымыңызды жазыңыз. Сообщение будет передано разработчику.",
         reply_markup=back_keyboard()
     )
     return FEEDBACK
 
-async def feedback_receive(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def feedback_receive(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore
     user = update.effective_user
     logging.info(f"Feedback from {user.username} ({user.id}): {update.message.text}")
     await update.message.reply_text("✅ Спасибо! Ваше сообщение отправлено разработчику.", reply_markup=back_keyboard())
-    return ConversationHandler.END
+    return ConversationHandler.END # type: ignore
 
 # Wikipedia
-async def external_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def external_handler(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore
     await update.callback_query.edit_message_text(
         "🌐 Поиск по Wikipedia. Введите ваш физический вопрос или термин:"
         "\n\nПример: масса электрона, закон Архимеда, энергия фотона и т.п.",
@@ -340,13 +357,13 @@ async def external_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["external"] = True
 
 
-async def visual_show(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def visual_show(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore
     query = update.callback_query
     name = query.data.replace("visual_", "")
     await query.answer()
 
 # Кнопки
-async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def button(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore
     query = update.callback_query
     await query.answer()
     if query.data == 'terms':
@@ -394,7 +411,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await visual_show(update, context)
 
 # Сообщения
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE): # type: ignore
     text = update.message.text.strip().lower()
     user_id = update.effective_user.id
 
@@ -456,18 +473,18 @@ def main():
     logging.basicConfig(
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
     )
-    app = ApplicationBuilder().token(TOKEN).build()
+    app = ApplicationBuilder().token(TOKEN).build() # type: ignore
     app.add_handler(CommandHandler("start", start))
-    feedback_conv = ConversationHandler(
-        entry_points=[CallbackQueryHandler(feedback_start, pattern='^feedback$')],
+    feedback_conv = ConversationHandler( # type: ignore
+        entry_points=[CallbackQueryHandler(feedback_start, pattern='^feedback$')], # type: ignore
         states={
-            FEEDBACK: [MessageHandler(filters.TEXT & ~filters.COMMAND, feedback_receive)]
+            FEEDBACK: [MessageHandler(filters.TEXT & ~filters.COMMAND, feedback_receive)] # type: ignore
         },
-        fallbacks=[CallbackQueryHandler(show_main_menu, pattern='^back$')]
+        fallbacks=[CallbackQueryHandler(show_main_menu, pattern='^back$')] # type: ignore
     )
     app.add_handler(feedback_conv)
-    app.add_handler(CallbackQueryHandler(button))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(CallbackQueryHandler(button)) # type: ignore
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)) # type: ignore
     print("Бот іске қосылды!")
     app.run_polling()
 

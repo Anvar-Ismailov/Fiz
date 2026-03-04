@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ашық сабақ: Толқындық оптика — Ирисметова Азиза</title>
+    <style>
+        :root {
+            --neon-cyan: #00f2ff;
+            --neon-purple: #7000ff;
+            --dark-blue: #020c1b;
+            --text-silver: #ccd6f6;
+            --glass-bg: rgba(10, 25, 47, 0.85);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--dark-blue);
+            color: var(--text-silver);
+            line-height: 1.7;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://i.ibb.co.com/NnyFVMRt/IMG-20250501-WA0055.jpg') no-repeat center center / cover;
+            z-index: -2;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 12, 27, 0.92);
+            z-index: -1;
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(2, 12, 27, 0.6);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid var(--neon-cyan);
+            box-shadow: 0 5px 20px rgba(0, 242, 255, 0.15);
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            color: var(--neon-cyan);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px rgba(0, 242, 255, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        main {
+            background: var(--glass-bg);
+            padding: 45px;
+            border-radius: 30px;
+            border: 1px solid rgba(0, 242, 255, 0.15);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        .welcome-msg {
+            font-size: 1.3rem;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 35px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+       
+        .lesson-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .info-card:hover {
+            border-color: var(--neon-cyan);
+            background: rgba(0, 242, 255, 0.05);
+        }
+
+        .info-card strong {
+            display: block;
+            color: var(--neon-cyan);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .info-card span {
+            font-size: 1rem;
+            color: #fff;
+        }
+
+        h2 {
+            color: var(--neon-cyan);
+            margin: 40px 0 20px;
+            font-size: 1.5rem;
+            border-left: 4px solid var(--neon-purple);
+            padding-left: 15px;
+        }
+
+        .topic-box {
+            background: linear-gradient(135deg, rgba(112, 0, 255, 0.15), rgba(0, 242, 255, 0.15));
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            margin-bottom: 40px;
+        }
+
+        .topic-box h3 {
+            font-size: 1.4rem;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        .text-block {
+            margin-bottom: 25px;
+            color: var(--text-silver);
+            text-align: justify;
+        }
+
+        .highlight-text {
+            color: var(--neon-cyan);
+            font-weight: 600;
+        }
+
+       
+        .btn-container {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            padding: 14px 35px;
+            background: transparent;
+            color: var(--neon-cyan);
+            border: 1px solid var(--neon-cyan);
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .btn-back:hover {
+            background: var(--neon-cyan);
+            color: var(--dark-blue);
+            box-shadow: 0 0 25px var(--neon-cyan);
+            transform: translateY(-3px);
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            opacity: 0.4;
+            font-size: 0.8rem;
+        }
+
+        .animate-up {
+            opacity: 0;
+            transform: translateY(25px);
+            transition: all 0.7s ease-out;
+        }
+
+        .animate-up.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 600px) {
+            main { padding: 25px; }
+            header h1 { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="container">
+        <h1>Анвар Исмаилов атындағы кәсіптік колледжі</h1>
+    </div>
+</header>
+
+<div class="container">
+    <main>
+        <div class="welcome-msg animate-up">
+            Ирисметова Азиза Адилжановнаның физика пәнінен ашық сабағына қош келдіңіздер!
+        </div>
+
+        <div class="lesson-info-grid animate-up">
+            <div class="info-card"><strong>Пәні</strong><span>Физика</span></div>
+            <div class="info-card"><strong>Топ</strong><span>БСО-251/Б (1-курс)</span></div>
+            <div class="info-card"><strong>Күні</strong><span>05.03.2026</span></div>
+            <div class="info-card"><strong>Уақыты</strong><span>08:30</span></div>
+            <div class="info-card"><strong>Орны</strong><span>109 аудитория</span></div>
+            <div class="info-card"><strong>Түрі</strong><span>Теориялық</span></div>
+        </div>
+
+        <div class="topic-box animate-up">
+            <span style="color: var(--neon-purple); font-weight: bold; font-size: 0.8rem; text-transform: uppercase;">Сабақтың тақырыбы:</span>
+            <h3>Толқындық оптика. Жарық интерференциясы. Жарық дифракциясы.</h3>
+        </div>
+
+        
+
+        <div class="text-block animate-up">
+            <h2>Құрметті ұстаздар!</h2>
+            <p>Физика пәнінің оқытушысы <span class="highlight-text">Ирисметова Азиза Адилжановнаның</span> БСО-251/Б тобымен ұйымдастырған ашық сабағында сіздерді көргенімізге қуаныштымыз.</p>
+            <br>
+            <p>Аталған ашық сабақта білім алушылар толқындық оптика бөлімі бойынша меңгерген теориялық білімдерін жүйелеп, жарықтың <span class="highlight-text">интерференциясы</span> мен <span class="highlight-text">дифракция</span> құбылыстарының физикалық мәнін терең талдайды.</p>
+        </div>
+
+        <div class="text-block animate-up">
+            <p>Сабақ барысында студенттер формулаларды қолдану, есептер шығару және физикалық құбылыстардың өмірмен байланысын түсіндіру арқылы өз білімдерін дәлелдейді. Бұл ашық сабақ – студенттердің ғылыми ойлау қабілетін дамытуға, пәнге деген қызығушылығын арттыруға және көпшілік алдында еркін сөйлеу дағдыларын қалыптастыруға үлкен мүмкіндік.</p>
+        </div>
+
+        <div class="highlight-box animate-up" style="text-align: center; margin-top: 30px; padding: 20px; border: 1px dashed var(--neon-cyan); border-radius: 15px;">
+            <p style="color: var(--neon-cyan); letter-spacing: 1px;">Сіздердің қатысуларыңыз бен қолдауларыңыз біз үшін үлкен мәртебе!</p>
+        </div>
+
+        <div class="btn-container animate-up">
+            <a href="index.html" class="btn-back">← Басты бетке қайту</a>
+        </div>
+    </main>
+</div>
+
+<footer>
+    &copy; 2026 Барлық құқықтар қорғалған. Физика секциясы.
+</footer>
+
+<script>
+    const observerOptions = { threshold: 0.1 };
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('show');
+            }
+        });
+    }, observerOptions);
+
+    document.querySelectorAll('.animate-up').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

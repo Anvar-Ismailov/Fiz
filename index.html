@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Физика ашық сабағы — Ирисметова Азиза</title>
+    <style>
+        :root {
+            --neon-cyan: #00f2ff;
+            --neon-purple: #7000ff;
+            --dark-blue: #020c1b;
+            --text-silver: #ccd6f6;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--text-silver);
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://i.ibb.co.com/NnyFVMRt/IMG-20250501-WA0055.jpg') no-repeat center center / cover;
+            z-index: -2;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 12, 27, 0.85);
+            z-index: -1;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 20px;
+            background: rgba(2, 12, 27, 0.5);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 242, 255, 0.3);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .glass-card {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            background: rgba(10, 25, 47, 0.85);
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            border-radius: 24px;
+            padding: 30px;
+            text-align: center;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            transition: transform 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--neon-cyan);
+        }
+
+        .img-wrapper {
+            width: 100%;
+            height: auto; 
+            min-height: 150px; 
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 25px;
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            background: rgba(0, 0, 0, 0.2); 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px; 
+        }
+
+        .img-wrapper img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain; 
+            display: block;
+            transition: transform 0.5s ease;
+        }
+
+        .glass-card:hover img {
+            transform: scale(1.05);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 16px;
+            background: rgba(0, 242, 255, 0.1);
+            color: var(--neon-cyan);
+            border: 1px solid var(--neon-cyan);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+
+        .name {
+            font-size: 1.6rem;
+            color: #fff;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .subject {
+            color: #8892b0;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+        }
+
+        .btn-action {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(90deg, var(--neon-purple), var(--neon-cyan));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-action:hover {
+            opacity: 0.9;
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 450px) {
+            header h1 { font-size: 1.1rem; }
+            .name { font-size: 1.4rem; }
+            .subject { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Анвар Исмаилов атындағы кәсіптік колледжі</h1>
+    </header>
+
+    <div class="container">
+        <div class="glass-card">
+            <div class="img-wrapper">
+                <img src="https://i.ibb.co.com/tTY0fBFz/1.png" alt="Физика оқытушысы">
+            </div>
+            
+            <span class="badge">Физика ашық сабақ</span>
+            <div class="name">Ирисметова Азиза</div>
+            <div class="subject">Тақырыбы: Толқындық оптика</div>
+
+            <a href="Jass.html" class="btn-action">Мәліметтерді көру</a>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2026 Барлық құқықтар қорғалған
+    </footer>
+
+</body>
+</html>
